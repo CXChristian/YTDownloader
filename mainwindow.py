@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QLineEdit, QPushButton, QProgressBar
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import Qt
 from downloader import Downloader
@@ -37,14 +37,22 @@ class MainWindow(QMainWindow):
         self.button.setStyleSheet("font-size: 20px;"
                                   "font-family: Arial")
         self.button.clicked.connect(self.submit)
+
+        # Progress Bar
+        self.pbar = QProgressBar(self)
+        self.pbar.setGeometry(50, 250, 500, 50)
         
         # Window Downloader
         self.downloader = Downloader()
+        self.downloader.progress_changed.connect(self.update_progress)  # Connect signal to slot
 
     def submit(self):
         text = self.line_edit.text()
         print(f"Entered: {text}")
         self.downloader.run(text)
+
+    def update_progress(self, value):
+        self.pbar.setValue(value)
 
 def launch():
     app = QApplication([])

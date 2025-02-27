@@ -2,6 +2,7 @@ import os
 from pytubefix import YouTube
 import ffmpeg
 from utils import clean_string
+from PyQt5.QtCore import QObject, pyqtSignal
 
 DESKTOP_PATH =      os.path.join(os.path.expanduser("~"), "Desktop")
 SAVE_FINAL_PATH =   f'{DESKTOP_PATH}\\YTDownloads'
@@ -10,7 +11,9 @@ TYPE_DOWNLOAD =     "mp4"
 VIDEO =             "video"
 AUDIO =             "audio"
 
-class Downloader():
+class Downloader(QObject):
+    progress_changed = pyqtSignal(int)
+
     def run(self, input):
         try:
             yt = YouTube(input)
@@ -24,8 +27,8 @@ class Downloader():
             self.merge_mp4(clean_title)
 
             self.clean_temp(clean_title)
-        except:
-            print("Run process failed!")
+        except Exception as e:
+            print(f"Run process failed! {e}")
  
     """
     This is the function to download the video and audio from a YouTube video.
@@ -45,6 +48,7 @@ class Downloader():
  
             ys.download(output_path=SAVE_PART_PATH, filename=clean_filename)
             print("Part Downloaded!")
+            self.change_progress_signal(40)
         except:
             print("Could Not Find Stream!")
 
@@ -57,16 +61,21 @@ class Downloader():
 
             video_ffmpeg = ffmpeg.input(video_path)
             audio_ffmpeg = ffmpeg.input(audio_path)
-            ffmpeg.output(video_ffmpeg, audio_ffmpeg, output_path, vcodec='copy', acodec='copy').run()
+            ffmpeg.output(audio_ffmpeg, video_ffmpeg, output_path, vcodec='copy', acodec='copy').run()
 
             print("Video and audio combined successfully!")
-        except:
-            print("Error combining video and audio!")
+            self.change_progress_signal(80)
+        except Exception as e:
+            print(f"Error combining video and audio! {e}")
 
     def clean_temp(self, title):
         try:
             os.remove(f'{SAVE_PART_PATH}\{title}.mp4')
             os.remove(f'{SAVE_PART_PATH}\{title}.m4a')
             print("Temp files removed!")
+            self.change_progress_signal(100)
         except:
             print("Could not remove temp files!")
+
+    def change_progress_signal(self, value):
+        self.progress_changed.emit(value)
